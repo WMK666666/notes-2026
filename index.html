@@ -10,17 +10,32 @@
   --bg:#0d1117; --bg2:#161b22; --bg3:#1c2128; --line:#30363d; --line2:#21262d;
   --fg:#e6edf3; --dim:#8b949e; --dim2:#6e7681;
   --blue:#58a6ff; --orange:#d29922; --red:#f85149; --green:#3fb950; --purple:#bc8cff;
+  --fg2:#c9d1d9; --strong:#ffffff; --red2:#ff9b95; --amber2:#e3b341;
+  --purple2:#d2a8ff; --green2:#9fd8a8; --okfg:#7ee08a;
+  --hover:rgba(255,255,255,.02); --hover2:rgba(255,255,255,.02); --hover3:rgba(255,255,255,.015);
+  --headbg:rgba(13,17,23,.95);
   --fs:16px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
-body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;font-size:var(--fs);line-height:1.72;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;font-size:var(--fs);line-height:1.72;-webkit-text-size-adjust:100%;transition:background .18s,color .18s}
 body.small{--fs:14.5px}
 body.big{--fs:17.5px}
+
+/* ---------- 浅色主题 ---------- */
+body.light{
+  --bg:#ffffff; --bg2:#f6f8fa; --bg3:#eef1f4; --line:#cfd6dd; --line2:#e1e6eb;
+  --fg:#1f2328; --dim:#59636e; --dim2:#7d8896;
+  --blue:#0969da; --orange:#9a6700; --red:#cf222e; --green:#1a7f37; --purple:#8250df;
+  --fg2:#24292f; --strong:#101418; --red2:#cf222e; --amber2:#8a5a00;
+  --purple2:#8250df; --green2:#1a7f37; --okfg:#1a7f37;
+  --hover:rgba(0,0,0,.035); --hover2:rgba(0,0,0,.03); --hover3:rgba(0,0,0,.02);
+  --headbg:rgba(255,255,255,.92);
+}
 .wrap{max-width:960px;margin:0 auto;padding:0 20px}
 
 /* ---------- 顶栏 ---------- */
-header{position:sticky;top:0;z-index:50;background:rgba(13,17,23,.95);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header{position:sticky;top:0;z-index:50;background:var(--headbg);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .htop{display:flex;align-items:center;gap:12px;padding:11px 0 9px;flex-wrap:wrap}
 .brand{font-size:1em;font-weight:700;letter-spacing:.02em;white-space:nowrap}
 .brand em{font-style:normal;color:var(--dim);font-weight:400;font-size:.76em;margin-left:10px}
@@ -63,7 +78,7 @@ details.card:hover{border-color:var(--line)}
 details.card.hide{display:none}
 summary{list-style:none;cursor:pointer;padding:13px 16px;display:flex;align-items:center;gap:11px;user-select:none}
 summary::-webkit-details-marker{display:none}
-summary:hover{background:rgba(255,255,255,.02)}
+summary:hover{background:var(--hover)}
 .qid{font-family:ui-monospace,Consolas,monospace;font-size:.76em;color:var(--dim2);min-width:44px;flex:none}
 .qt{font-size:.95em;font-weight:600;flex:1;line-height:1.5}
 .tag{font-size:.68em;padding:1px 7px;border-radius:4px;flex:none;letter-spacing:.04em}
@@ -85,11 +100,11 @@ details[open] .chev{transform:rotate(90deg)}
 .seg.ask p{margin:0;font-size:.94em}
 .seg.say blockquote{margin:0 0 8px;padding:12px 15px;background:rgba(88,166,255,.07);border-left:2px solid var(--blue);border-radius:0 7px 7px 0;font-size:.95em}
 .seg.say blockquote:last-child{margin-bottom:0}
-.seg.det{font-size:.9em;color:#c9d1d9}
+.seg.det{font-size:.9em;color:var(--fg2)}
 .seg.det p{margin:0 0 10px}
 .seg.det p:last-child{margin-bottom:0}
 .seg.probe ul,.seg.red ul{margin:0;padding-left:18px;font-size:.88em;color:var(--dim)}
-.seg.red ul{color:#ff9b95}
+.seg.red ul{color:var(--red2)}
 .seg.probe li,.seg.red li{margin-bottom:7px}
 .seg.probe li:last-child,.seg.red li:last-child{margin-bottom:0}
 
@@ -99,15 +114,15 @@ details[open] .chev{transform:rotate(90deg)}
 .tw table{margin:0}
 .cbody th,.cbody td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;word-break:break-word}
 .cbody th{background:var(--bg3);color:var(--dim);font-weight:600;font-size:.95em}
-.cbody td{color:#c9d1d9}
+.cbody td{color:var(--fg2)}
 .cbody,.cbody p,.cbody li,.cbody blockquote,.cbody td,.cbody th{overflow-wrap:anywhere}
 .cbody ul,.cbody ol{margin:8px 0;padding-left:20px}
 .cbody li{margin-bottom:5px}
-.cbody strong,b{color:#fff;font-weight:600}
-.cbody blockquote{margin:10px 0;padding:9px 14px;border-left:2px solid var(--line);color:var(--dim);background:rgba(255,255,255,.02)}
+.cbody strong,b{color:var(--strong);font-weight:600}
+.cbody blockquote{margin:10px 0;padding:9px 14px;border-left:2px solid var(--line);color:var(--dim);background:var(--hover2)}
 .src{display:block;color:var(--dim2);font-size:.86em;margin-top:2px}
-.warn{margin-top:12px;padding:11px 14px;border-radius:8px;background:rgba(188,140,255,.08);border:1px solid rgba(188,140,255,.25);font-size:.88em;color:#d2a8ff}
-.tip{padding:10px 14px;border-radius:8px;background:rgba(63,185,80,.07);border-left:2px solid var(--green);font-size:.9em;color:#9fd8a8}
+.warn{margin-top:12px;padding:11px 14px;border-radius:8px;background:rgba(188,140,255,.08);border:1px solid rgba(188,140,255,.25);font-size:.88em;color:var(--purple2)}
+.tip{padding:10px 14px;border-radius:8px;background:rgba(63,185,80,.07);border-left:2px solid var(--green);font-size:.9em;color:var(--green2)}
 .note{margin-top:16px;padding:13px 16px;border-radius:9px;background:var(--bg3);border:1px solid var(--line);font-size:.9em}
 .note b{color:var(--orange)}
 .lead{color:var(--dim);font-size:.9em;margin:0 0 14px}
@@ -133,9 +148,9 @@ details.sub summary .hint{color:var(--dim2);font-size:.84em;margin-left:auto;fon
 .opts button:hover{color:var(--fg);border-color:var(--dim2)}
 .opts button.on{background:rgba(88,166,255,.15);border-color:var(--blue);color:var(--blue)}
 .verdict{margin:12px 0 0;padding:13px 16px;border-radius:9px;background:var(--bg3);border:1px solid var(--line);font-size:.9em;color:var(--dim)}
-.verdict.ok{border-color:rgba(63,185,80,.45);background:rgba(63,185,80,.09);color:#7ee08a}
-.verdict.mid{border-color:rgba(210,153,34,.45);background:rgba(210,153,34,.09);color:#e3b341}
-.verdict.no{border-color:rgba(248,81,73,.45);background:rgba(248,81,73,.09);color:#ff7b72}
+.verdict.ok{border-color:rgba(63,185,80,.45);background:rgba(63,185,80,.09);color:var(--okfg)}
+.verdict.mid{border-color:rgba(210,153,34,.45);background:rgba(210,153,34,.09);color:var(--amber2)}
+.verdict.no{border-color:rgba(248,81,73,.45);background:rgba(248,81,73,.09);color:var(--red2)}
 
 footer{border-top:1px solid var(--line2);padding:20px 0 40px;color:var(--dim2);font-size:.8em;text-align:center}
 .empty{display:none;padding:26px 0;color:var(--dim);text-align:center;font-size:.9em}
@@ -160,7 +175,7 @@ footer{border-top:1px solid var(--line2);padding:20px 0 40px;color:var(--dim2);f
   .tw{overflow:visible}
   .cbody table,.cbody tbody,.cbody tr,.cbody td,.cbody th{display:block;width:auto}
   .cbody tr:has(th){display:none}
-  .cbody tr{border:1px solid var(--line);border-radius:9px;padding:6px 10px;margin-bottom:9px;background:rgba(255,255,255,.015)}
+  .cbody tr{border:1px solid var(--line);border-radius:9px;padding:6px 10px;margin-bottom:9px;background:var(--hover3)}
   .cbody td{border:none;padding:4px 0;font-size:.9em}
   .cbody td[data-l]::before{content:attr(data-l);display:block;font-size:.76em;color:var(--dim2);margin-bottom:1px}
   .cbody td:empty{display:none}
@@ -168,6 +183,7 @@ footer{border-top:1px solid var(--line2);padding:20px 0 40px;color:var(--dim2);f
 </style>
 </head>
 <body>
+<script>try{if(localStorage.getItem('theme')==='light'){document.body.className+=' light';document.documentElement.style.colorScheme='light';}}catch(e){}</script>
 <header>
   <div class="wrap">
     <div class="htop">
@@ -177,6 +193,7 @@ footer{border-top:1px solid var(--line2);padding:20px 0 40px;color:var(--dim2);f
         <button class="btn" id="expand">全展开</button>
         <button class="btn" id="collapse">全收起</button>
         <button class="btn" id="font">字号</button>
+        <button class="btn" id="theme" title="切到浅色">浅色</button>
       </div>
     </div>
     <div class="modes">
@@ -751,6 +768,22 @@ footer{border-top:1px solid var(--line2);padding:20px 0 40px;color:var(--dim2);f
     document.body.classList.remove('big','small');
     if (sizes[si]) document.body.classList.add(sizes[si]);
   });
+
+  /* 深色 / 浅色 */
+  var themeBtn = document.getElementById('theme');
+  function applyTheme(t){
+    document.body.classList.toggle('light', t === 'light');
+    document.documentElement.style.colorScheme = (t === 'light' ? 'light' : 'dark');
+    themeBtn.textContent = (t === 'light') ? '深色' : '浅色';
+    themeBtn.title = (t === 'light') ? '切到深色' : '切到浅色';
+    try { localStorage.setItem('theme', t); } catch(e){}
+  }
+  themeBtn.addEventListener('click', function(){
+    applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
+  });
+  var saved = null;
+  try { saved = localStorage.getItem('theme'); } catch(e){}
+  applyTheme(saved === 'light' ? 'light' : 'dark');
 
   document.addEventListener('click', function(e){
     var j = (e.target.closest ? e.target.closest('[data-jump]') : null);
