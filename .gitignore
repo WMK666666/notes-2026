@@ -1,0 +1,3 @@
+build/_*.html
+build/*.png
+build/__pycache__/
