@@ -692,7 +692,8 @@ def main():
       <h1>速查：现场答卷用的 %(nq)d 张卡</h1>
       <p>面试官扔场景时照这个走：先问 → 判断值不值得做 → 12 步。</p>
       <div class="note">三个板块：考前速扫 / 场景题 12 步 / 项目全链路。
-      标 <b style="color:var(--purple)">待你填</b> 的几张需要你自己补事实。</div>
+      标 <b style="color:var(--purple)">待你填</b> 的几张需要你自己补事实；
+      带 <b style="color:var(--green)">绿框背诵版</b> 的 %(nr)d 张可以直接照念，点右上角「背诵模式」只留稿子翻着背；其余是没有定稿的口播、只给现场思路。</div>
     </div>
     %(qsecs)s
   </div>
@@ -713,7 +714,8 @@ def main():
 </html>""" % dict(title=TITLE, sub=SUBTITLE, css=CSS, js=JS, nq=n_quick, nh=n_hb,
                  qtabs="".join(q_tabs), htabs="".join(h_tabs), nt=HB.TOTAL,
                  qsecs="".join(q_secs), hsecs="".join(h_secs),
-                 pre=len(hb_blocks[0]["cards"]), apx=len(hb_blocks[-1]["cards"]))
+                 pre=len(hb_blocks[0]["cards"]), apx=len(hb_blocks[-1]["cards"]),
+                 nr=len(RECITE))
 
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(doc)
