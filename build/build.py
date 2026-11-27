@@ -127,9 +127,14 @@ details[open] .chev{transform:rotate(90deg)}
 
 /* ---------- 背诵版 ---------- */
 .seg.recite .lab{color:var(--green)}
-.recite-body{margin:0;padding:15px 17px;background:rgba(63,185,80,.055);border:1px solid rgba(63,185,80,.24);border-radius:9px;font-size:1em;line-height:1.85;color:var(--fg)}
-.recite-body p{margin:0 0 11px}
-.recite-body p:last-child{margin-bottom:0}
+.vwrap{margin:0;padding:15px 17px;background:rgba(63,185,80,.055);border:1px solid rgba(63,185,80,.24);border-radius:9px;font-size:1em;line-height:1.85;color:var(--fg)}
+.vwrap p{margin:0 0 11px}
+.vwrap p:last-child{margin-bottom:0}
+.vwrap[hidden]{display:none!important}
+.vtabs{display:flex;gap:6px;margin:0 0 11px;flex-wrap:wrap}
+.vtab{background:var(--bg3);border:1px solid var(--line);color:var(--dim);border-radius:999px;padding:5px 14px;font-size:.8em;font-family:inherit;cursor:pointer;transition:.14s}
+.vtab:hover{color:var(--fg);border-color:var(--dim2)}
+.vtab.on{background:rgba(63,185,80,.14);border-color:var(--green);color:var(--green);font-weight:700}
 .recite-meta{margin-top:7px;font-size:.76em;color:var(--dim2);letter-spacing:.02em}
 .recite-meta b{color:var(--green);font-weight:600}
 
@@ -152,10 +157,11 @@ body.recite-mode .seg.ask{margin-top:0}
 body.recite-mode .seg.ask p{font-size:.92em;color:var(--dim)}
 body.recite-mode .seg.say blockquote{font-size:.92em;background:transparent;border-left:2px solid var(--line);color:var(--dim);padding:6px 14px}
 body.recite-mode .seg.recite{margin-top:16px}
-body.recite-mode .recite-body{padding:20px 22px;font-size:1.04em;line-height:2}
+body.recite-mode .vwrap{padding:20px 22px;font-size:1.04em;line-height:2}
 .rbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--headbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:9px 16px;font-size:.8em;color:var(--dim);justify-content:center;align-items:center;gap:18px}
 body.recite-mode .rbar{display:flex!important}
 .rbar #rnum{font-family:ui-monospace,Consolas,monospace;color:var(--fg)}
+.rbar #rtag{color:var(--green);font-size:.95em;font-weight:600}
 .rbar .rhint{color:var(--dim2)}
 .rbar .rbtn{background:var(--bg3);border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:6px 16px;font-size:.95em;font-family:inherit;cursor:pointer;transition:.12s}
 .rbar .rbtn:hover{border-color:var(--dim2)}
@@ -248,7 +254,7 @@ JS = r"""
   var empty = document.getElementById('empty');
   var emptyTxt = document.getElementById('empty-txt');
   var cur = 'quick';
-  var reciteMode = false, rIdx = 0, rCards = [];
+  var reciteMode = false, rIdx = 0, rUnits = [];
 
   function cardsOf(mode){
     return [].slice.call(document.querySelectorAll('#mode-' + mode + ' details.card'));
@@ -280,7 +286,7 @@ JS = r"""
     } else {
       empty.style.display = 'none';
     }
-    if (reciteMode) rebuildRCards();
+    if (reciteMode) rebuildRUnits();
   }
 
   function setMode(m, keepScroll){
@@ -386,34 +392,74 @@ JS = r"""
     });
   });
 
+  /* ---------- 背诵版：投研 / 跨境 切换 ---------- */
+  function setVer(card, i){
+    [].slice.call(card.querySelectorAll('.vwrap')).forEach(function(w){
+      w.hidden = (parseInt(w.dataset.v, 10) !== i);
+    });
+    [].slice.call(card.querySelectorAll('.vtab')).forEach(function(t){
+      t.classList.toggle('on', parseInt(t.dataset.v, 10) === i);
+    });
+  }
+
+  function curVer(card){
+    var w = card.querySelector('.vwrap:not([hidden])');
+    return w ? parseInt(w.dataset.v, 10) : 0;
+  }
+
+  document.addEventListener('click', function(e){
+    var t = (e.target.closest ? e.target.closest('.vtab') : null);
+    if (!t) return;
+    var card = t.closest('details.card');
+    if (!card) return;
+    var v = parseInt(t.dataset.v, 10);
+    setVer(card, v);
+    if (reciteMode) syncUnit(card, v);
+  });
+
   /* ---------- 背诵模式 ---------- */
   var rBtn = document.getElementById('recite');
   var rNum = document.getElementById('rnum');
+  var rTag = document.getElementById('rtag');
   var rPrev = document.getElementById('rprev');
   var rNext = document.getElementById('rnext');
 
   function paintNum(){
-    var n = rCards.length;
+    var n = rUnits.length;
     rNum.textContent = n ? (rIdx + 1) + ' / ' + n : '0 / 0';
     rPrev.disabled = (rIdx <= 0);
     rNext.disabled = (rIdx >= n - 1);
+    if (!rTag) return;
+    if (!n) { rTag.textContent = ''; return; }
+    var u = rUnits[Math.min(rIdx, n - 1)];
+    var tabs = u.card.querySelectorAll('.vtab');
+    rTag.textContent = tabs.length ? tabs[u.v].textContent : '';
   }
 
-  function rebuildRCards(){
-    rCards = [].slice.call(document.querySelectorAll('#mode-quick details.card'))
-      .filter(function(c){
-        return c.querySelector('.recite-body') && !c.classList.contains('hide');
-      });
-    if (rIdx >= rCards.length) rIdx = Math.max(0, rCards.length - 1);
+  function rebuildRUnits(){
+    rUnits = [];
+    [].slice.call(document.querySelectorAll('#mode-quick details.card')).forEach(function(c){
+      if (c.classList.contains('hide')) return;
+      var n = c.querySelectorAll('.vwrap').length;
+      for (var i = 0; i < n; i++) rUnits.push({card: c, v: i});
+    });
+    if (rIdx >= rUnits.length) rIdx = Math.max(0, rUnits.length - 1);
     paintNum();
   }
 
-  function gotoCard(i){
-    if (!rCards.length) return;
-    rIdx = Math.max(0, Math.min(rCards.length - 1, i));
-    var c = rCards[rIdx];
+  function syncUnit(card, v){
+    for (var i = 0; i < rUnits.length; i++) {
+      if (rUnits[i].card === card && rUnits[i].v === v) { rIdx = i; paintNum(); return; }
+    }
+  }
+
+  function gotoUnit(i){
+    if (!rUnits.length) return;
+    rIdx = Math.max(0, Math.min(rUnits.length - 1, i));
+    var u = rUnits[rIdx];
+    setVer(u.card, u.v);
     var hh = document.querySelector('header').offsetHeight + 8;
-    var y = c.getBoundingClientRect().top + window.pageYOffset - hh;
+    var y = u.card.getBoundingClientRect().top + window.pageYOffset - hh;
     window.scrollTo({top: Math.max(0, y), behavior: 'auto'});
     paintNum();
   }
@@ -427,47 +473,56 @@ JS = r"""
     if (on) {
       if (cur !== 'quick') setMode('quick', true);
       cardsOf('quick').forEach(function(c){
-        c.classList.toggle('norec', !c.querySelector('.recite-body'));
+        c.classList.toggle('norec', !c.querySelector('.vwrap'));
         c.open = true;
       });
       rIdx = 0;
-      rebuildRCards();
+      rebuildRUnits();
       window.scrollTo({top: 0, behavior: 'auto'});
-      setTimeout(function(){ gotoCard(0); }, 20);
+      gotoUnit(0);
     } else {
-      rCards = [];
+      rUnits = [];
       paintNum();
     }
   }
 
   rBtn.addEventListener('click', function(){ setRecite(!reciteMode); });
-  rPrev.addEventListener('click', function(){ gotoCard(rIdx - 1); });
-  rNext.addEventListener('click', function(){ gotoCard(rIdx + 1); });
+  rPrev.addEventListener('click', function(){ gotoUnit(rIdx - 1); });
+  rNext.addEventListener('click', function(){ gotoUnit(rIdx + 1); });
 
   document.addEventListener('keydown', function(e){
     if (!reciteMode) return;
     if (e.target && e.target.tagName === 'INPUT') return;
     if (e.key === 'Escape') { setRecite(false); return; }
     if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
-      e.preventDefault(); gotoCard(rIdx + 1);
+      e.preventDefault(); gotoUnit(rIdx + 1);
     } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-      e.preventDefault(); gotoCard(rIdx - 1);
+      e.preventDefault(); gotoUnit(rIdx - 1);
     }
   });
 
   var rTick = false;
   window.addEventListener('scroll', function(){
-    if (!reciteMode || rTick || !rCards.length) return;
+    if (!reciteMode || rTick || !rUnits.length) return;
     rTick = true;
     requestAnimationFrame(function(){
       rTick = false;
       var hh = document.querySelector('header').offsetHeight + 8;
-      var best = 0, bd = 1e9;
-      rCards.forEach(function(c, i){
-        var d = Math.abs(c.getBoundingClientRect().top - hh);
-        if (d < bd) { bd = d; best = i; }
+      var bestCard = null, bd = 1e9, seen = [];
+      rUnits.forEach(function(u){
+        if (seen.indexOf(u.card) > -1) return;
+        seen.push(u.card);
+        var d = Math.abs(u.card.getBoundingClientRect().top - hh);
+        if (d < bd) { bd = d; bestCard = u.card; }
       });
-      if (best !== rIdx) { rIdx = best; paintNum(); }
+      if (!bestCard) return;
+      var v = curVer(bestCard);
+      for (var i = 0; i < rUnits.length; i++) {
+        if (rUnits[i].card === bestCard && rUnits[i].v === v) {
+          if (i !== rIdx) { rIdx = i; paintNum(); }
+          break;
+        }
+      }
     });
   }, {passive: true});
 
@@ -510,21 +565,37 @@ def md(s):
     return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
 
 
-def recite_html(s):
-    """背诵稿：按空行分段，自动算字数与口播时长（中文约 4.2 字/秒）"""
-    paras = [p.strip() for p in s.strip().split("\n\n") if p.strip()]
-    plain = strip(s)
-    n = len(re.sub(r"\s+", "", plain))
-    sec = int(round(n / 4.2))
-    body = "".join("<p>%s</p>" % md(p) for p in paras)
-    meta = ('<div class="recite-meta">全文 <b>%d</b> 字 · 正常语速念一遍约 <b>%d</b> 秒</div>' % (n, sec))
-    return ('<div class="seg recite"><span class="lab">背诵版 · 照着念</span>'
-            '<div class="recite-body">%s</div>%s</div>') % (body, meta)
+def recite_html(versions):
+    """versions: [(版本名, 文本), ...]。单版不出标签，多版出「投研 / 跨境」切换。"""
+    if not versions:
+        return ""
+    tabs = ""
+    if len(versions) > 1:
+        tabs = '<div class="vtabs">' + "".join(
+            '<button class="vtab%s" data-v="%d">%s</button>' % (
+                " on" if i == 0 else "", i, H.escape(n))
+            for i, (n, _) in enumerate(versions)) + "</div>"
+    wraps = []
+    for i, (_name, s) in enumerate(versions):
+        paras = [p.strip() for p in s.strip().split("\n\n") if p.strip()]
+        plain = strip(s)
+        n = len(re.sub(r"\s+", "", plain))
+        sec = int(round(n / 4.2))
+        body = "".join("<p>%s</p>" % md(p) for p in paras)
+        meta = ('<div class="recite-meta">全文 <b>%d</b> 字 · 正常语速念一遍约 <b>%d</b> 秒</div>'
+                % (n, sec))
+        wraps.append('<div class="vwrap" data-v="%d"%s>%s%s</div>' % (
+            i, "" if i == 0 else " hidden", body, meta))
+    return ('<div class="seg recite"><span class="lab">背诵版 · 照着念</span>%s%s</div>'
+            % (tabs, "".join(wraps)))
+
 
 
 # ---------- 速查模块的卡 ----------
 def render_quick_card(c):
-    rc = RECITE.get(c["id"]) or c.get("recite")
+    rc = RECITE.get(c["id"]) or c.get("recite") or []
+    if isinstance(rc, str):
+        rc = [("两段一起讲", rc)]
     kids = []
     if c.get("todo"):
         kids.append('<span class="tag todo">待你填</span>')
@@ -532,8 +603,9 @@ def render_quick_card(c):
         cls = {"必背": "must", "必做": "must", "核心": "core"}.get(c["tag"], "core")
         kids.append('<span class="tag %s">%s</span>' % (cls, H.escape(c["tag"])))
 
+    rc_text = " ".join(t for _n, t in rc)
     search = " ".join(strip(x or "") for x in (
-        c.get("title"), c.get("ask"), c.get("say"), rc,
+        c.get("title"), c.get("ask"), c.get("say"), rc_text,
         c.get("detail"), c.get("body")))
     search += " " + " ".join(strip(p) for p in c.get("probe", []))
 
@@ -693,7 +765,8 @@ def main():
       <p>面试官扔场景时照这个走：先问 → 判断值不值得做 → 12 步。</p>
       <div class="note">三个板块：考前速扫 / 场景题 12 步 / 项目全链路。
       标 <b style="color:var(--purple)">待你填</b> 的几张需要你自己补事实；
-      带 <b style="color:var(--green)">绿框背诵版</b> 的 %(nr)d 张可以直接照念，点右上角「背诵模式」只留稿子翻着背；其余是没有定稿的口播、只给现场思路。</div>
+      带 <b style="color:var(--green)">绿框背诵版</b> 的 %(nr)d 张、共 %(nu)d 段（投研 / 跨境各一版，卡内可切换）可以直接照念；
+      点右上角「背诵模式」只留稿子、按段翻；其余是没有定稿的口播、只给现场思路。</div>
     </div>
     %(qsecs)s
   </div>
@@ -708,14 +781,14 @@ def main():
   <div class="empty" id="empty"><span id="empty-txt"></span></div>
 </main>
 <footer>个人技术笔记 · 速查 %(nq)d 张 ＋ 手册 %(nt)d 题（另含前置 %(pre)d 张、附录 %(apx)d 张）</footer>
-<div class="rbar" id="rbar"><button class="rbtn" id="rprev">上一张</button><span id="rnum">1 / 1</span><button class="rbtn" id="rnext">下一张</button><span class="rhint">↑ ↓ 翻卡 · Esc 退出</span></div>
+<div class="rbar" id="rbar"><button class="rbtn" id="rprev">上一段</button><span id="rnum">1 / 1</span><span id="rtag"></span><button class="rbtn" id="rnext">下一段</button><span class="rhint">↑ ↓ 翻段 · Esc 退出</span></div>
 <script>%(js)s</script>
 </body>
 </html>""" % dict(title=TITLE, sub=SUBTITLE, css=CSS, js=JS, nq=n_quick, nh=n_hb,
                  qtabs="".join(q_tabs), htabs="".join(h_tabs), nt=HB.TOTAL,
                  qsecs="".join(q_secs), hsecs="".join(h_secs),
                  pre=len(hb_blocks[0]["cards"]), apx=len(hb_blocks[-1]["cards"]),
-                 nr=len(RECITE))
+                 nr=len(RECITE), nu=sum(len(v) for v in RECITE.values()))
 
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(doc)
