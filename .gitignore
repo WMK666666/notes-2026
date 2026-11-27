@@ -1,3 +1,6 @@
 build/_*.html
+build/_*.js
+build/_*.py
+build/_prof/
 build/*.png
 build/__pycache__/

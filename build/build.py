@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""把 part0/1/2 组装成单文件 index.html（深色、原生折叠、可搜索）"""
+"""组装单文件 index.html：双模块（速查 40 卡 / 手册 79 题）· 深色 · 原生折叠 · 可搜索"""
 import html as H
 import os
 import re
@@ -9,69 +9,95 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import part0
 import part1
 import part2
+import recite_data
+import handbook_data as HB
+
+RECITE = recite_data.RECITE
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(BASE, "index.html")
 
-BLOCKS = [part0.BLOCK, part1.BLOCK, part2.BLOCK]
-
 TITLE = "场景题与项目表达 · 速查"
-SUBTITLE = "40 张卡 · 点开才看答案 · 手机也能用"
+SUBTITLE = "两个模块：速查 40 卡 · 手册 79 题"
 
 CSS = r"""
 :root{
   --bg:#0d1117; --bg2:#161b22; --bg3:#1c2128; --line:#30363d; --line2:#21262d;
   --fg:#e6edf3; --dim:#8b949e; --dim2:#6e7681;
   --blue:#58a6ff; --orange:#d29922; --red:#f85149; --green:#3fb950; --purple:#bc8cff;
+  --fg2:#c9d1d9; --strong:#ffffff; --red2:#ff9b95; --amber2:#e3b341;
+  --purple2:#d2a8ff; --green2:#9fd8a8; --okfg:#7ee08a;
+  --hover:rgba(255,255,255,.02); --hover2:rgba(255,255,255,.02); --hover3:rgba(255,255,255,.015);
+  --headbg:rgba(13,17,23,.95);
   --fs:16px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--fg)}
-body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;font-size:var(--fs);line-height:1.72;-webkit-text-size-adjust:100%}
+body{font-family:-apple-system,"Segoe UI","Microsoft YaHei",system-ui,sans-serif;font-size:var(--fs);line-height:1.72;-webkit-text-size-adjust:100%;transition:background .18s,color .18s}
 body.small{--fs:14.5px}
 body.big{--fs:17.5px}
+
+/* ---------- 浅色主题 ---------- */
+body.light{
+  --bg:#ffffff; --bg2:#f6f8fa; --bg3:#eef1f4; --line:#cfd6dd; --line2:#e1e6eb;
+  --fg:#1f2328; --dim:#59636e; --dim2:#7d8896;
+  --blue:#0969da; --orange:#9a6700; --red:#cf222e; --green:#1a7f37; --purple:#8250df;
+  --fg2:#24292f; --strong:#101418; --red2:#cf222e; --amber2:#8a5a00;
+  --purple2:#8250df; --green2:#1a7f37; --okfg:#1a7f37;
+  --hover:rgba(0,0,0,.035); --hover2:rgba(0,0,0,.03); --hover3:rgba(0,0,0,.02);
+  --headbg:rgba(255,255,255,.92);
+}
 .wrap{max-width:960px;margin:0 auto;padding:0 20px}
 
 /* ---------- 顶栏 ---------- */
-header{position:sticky;top:0;z-index:50;background:rgba(13,17,23,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-.htop{display:flex;align-items:center;gap:14px;padding:12px 0 10px;flex-wrap:wrap}
-.brand{font-size:1.02em;font-weight:700;letter-spacing:.02em;white-space:nowrap}
-.brand em{font-style:normal;color:var(--dim);font-weight:400;font-size:.8em;margin-left:8px}
+header{position:sticky;top:0;z-index:50;background:var(--headbg);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.htop{display:flex;align-items:center;gap:12px;padding:11px 0 9px;flex-wrap:wrap}
+.brand{font-size:1em;font-weight:700;letter-spacing:.02em;white-space:nowrap}
+.brand em{font-style:normal;color:var(--dim);font-weight:400;font-size:.76em;margin-left:10px}
 .tools{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-input#q{width:230px;background:var(--bg3);border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:7px 11px;font-size:.86em;font-family:inherit;outline:none}
+input#q{width:210px;background:var(--bg3);border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:7px 11px;font-size:.86em;font-family:inherit;outline:none}
 input#q:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(88,166,255,.12)}
 input#q::placeholder{color:var(--dim2)}
 .btn{background:var(--bg3);border:1px solid var(--line);color:var(--dim);border-radius:8px;padding:7px 11px;font-size:.82em;cursor:pointer;font-family:inherit;transition:.15s;white-space:nowrap}
 .btn:hover{color:var(--fg);border-color:var(--dim2)}
-.btn.on{color:var(--blue);border-color:var(--blue)}
+.btn.recite-btn.on{background:rgba(63,185,80,.15);border-color:var(--green);color:var(--green)}
+.btn.recite-btn.on:hover{color:var(--green)}
+
+/* 两个大模块 */
+.modes{display:flex;gap:7px;padding-bottom:9px;flex-wrap:wrap}
+.mode-btn{background:var(--bg2);border:1px solid var(--line);color:var(--dim);border-radius:9px;padding:8px 15px;font-size:.88em;cursor:pointer;font-family:inherit;transition:.15s;display:flex;align-items:center;gap:7px}
+.mode-btn b{font-weight:700}
+.mode-btn span{font-size:.85em;color:var(--dim2)}
+.mode-btn:hover{color:var(--fg);border-color:var(--dim2)}
+.mode-btn.on{background:rgba(88,166,255,.13);border-color:var(--blue);color:var(--blue)}
+.mode-btn.on span{color:rgba(88,166,255,.7)}
+
 .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tab{font-size:.8em;color:var(--dim);text-decoration:none;padding:5px 11px;border-radius:999px;border:1px solid var(--line2);white-space:nowrap}
 .tab:hover{color:var(--fg);border-color:var(--dim2)}
 
 /* ---------- 板块 ---------- */
-main{padding:26px 0 80px}
-.hero{padding:8px 0 22px;border-bottom:1px solid var(--line2);margin-bottom:26px}
-.hero h1{margin:0 0 6px;font-size:1.5em;letter-spacing:.01em}
+main{padding:24px 0 80px}
+.hero{padding:6px 0 20px;border-bottom:1px solid var(--line2);margin-bottom:24px}
+.hero h1{margin:0 0 6px;font-size:1.45em}
 .hero p{margin:0;color:var(--dim);font-size:.88em}
 .hero .note{margin-top:12px;font-size:.84em;color:var(--dim);border-left:2px solid var(--line);padding-left:12px}
 
-section.blk{margin-bottom:38px;scroll-margin-top:110px}
-.blkhead{display:flex;align-items:baseline;gap:10px;margin-bottom:4px;flex-wrap:wrap}
-.blkno{font-size:.72em;color:var(--blue);border:1px solid rgba(88,166,255,.35);border-radius:5px;padding:1px 7px;letter-spacing:.06em}
-.blkhead h2{margin:0;font-size:1.16em}
-.blksub{color:var(--dim);font-size:.84em;margin:0 0 16px}
+section.blk{margin-bottom:36px;scroll-margin-top:150px}
+.blkhead{margin-bottom:4px}
+.blkhead h2{margin:0;font-size:1.14em}
+.blksub{color:var(--dim);font-size:.84em;margin:0 0 14px}
 
 /* ---------- 卡片 ---------- */
 details.card{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;margin-bottom:9px;overflow:hidden;transition:border-color .15s}
 details.card:hover{border-color:var(--line)}
-details.card[open]{border-color:var(--line);background:var(--bg2)}
 details.card.hide{display:none}
 summary{list-style:none;cursor:pointer;padding:13px 16px;display:flex;align-items:center;gap:11px;user-select:none}
 summary::-webkit-details-marker{display:none}
-summary:hover{background:rgba(255,255,255,.02)}
-.qid{font-family:ui-monospace,Consolas,monospace;font-size:.76em;color:var(--dim2);min-width:42px;flex:none}
-.qt{font-size:.95em;font-weight:600;flex:1}
+summary:hover{background:var(--hover)}
+.qid{font-family:ui-monospace,Consolas,monospace;font-size:.76em;color:var(--dim2);min-width:44px;flex:none}
+.qt{font-size:.95em;font-weight:600;flex:1;line-height:1.5}
 .tag{font-size:.68em;padding:1px 7px;border-radius:4px;flex:none;letter-spacing:.04em}
 .tag.must{color:var(--red);background:rgba(248,81,73,.12);border:1px solid rgba(248,81,73,.3)}
 .tag.core{color:var(--orange);background:rgba(210,153,34,.12);border:1px solid rgba(210,153,34,.3)}
@@ -80,21 +106,60 @@ summary:hover{background:rgba(255,255,255,.02)}
 details[open] .chev{transform:rotate(90deg)}
 .cbody{padding:2px 16px 18px;border-top:1px solid var(--line2)}
 
-/* 四段 */
+/* 段落块 */
 .seg{margin-top:15px}
 .lab{display:inline-block;font-size:.7em;letter-spacing:.1em;color:var(--dim2);margin-bottom:6px}
 .seg.ask .lab{color:var(--purple)}
 .seg.say .lab{color:var(--blue)}
 .seg.det .lab{color:var(--dim)}
 .seg.probe .lab{color:var(--orange)}
-.seg.ask p{margin:0;color:var(--fg);font-size:.94em}
-.seg.say blockquote{margin:0;padding:12px 15px;background:rgba(88,166,255,.07);border-left:2px solid var(--blue);border-radius:0 7px 7px 0;font-size:.95em}
-.seg.det{font-size:.9em;color:#c9d1d9}
+.seg.red .lab{color:var(--red)}
+.seg.ask p{margin:0;font-size:.94em}
+.seg.say blockquote{margin:0 0 8px;padding:12px 15px;background:rgba(88,166,255,.07);border-left:2px solid var(--blue);border-radius:0 7px 7px 0;font-size:.95em}
+.seg.say blockquote:last-child{margin-bottom:0}
+.seg.det{font-size:.9em;color:var(--fg2)}
 .seg.det p{margin:0 0 10px}
 .seg.det p:last-child{margin-bottom:0}
-.seg.probe ul{margin:0;padding-left:18px;font-size:.88em;color:var(--dim)}
-.seg.probe li{margin-bottom:7px}
-.seg.probe li:last-child{margin-bottom:0}
+.seg.probe ul,.seg.red ul{margin:0;padding-left:18px;font-size:.88em;color:var(--dim)}
+.seg.red ul{color:var(--red2)}
+.seg.probe li,.seg.red li{margin-bottom:7px}
+.seg.probe li:last-child,.seg.red li:last-child{margin-bottom:0}
+
+/* ---------- 背诵版 ---------- */
+.seg.recite .lab{color:var(--green)}
+.recite-body{margin:0;padding:15px 17px;background:rgba(63,185,80,.055);border:1px solid rgba(63,185,80,.24);border-radius:9px;font-size:1em;line-height:1.85;color:var(--fg)}
+.recite-body p{margin:0 0 11px}
+.recite-body p:last-child{margin-bottom:0}
+.recite-meta{margin-top:7px;font-size:.76em;color:var(--dim2);letter-spacing:.02em}
+.recite-meta b{color:var(--green);font-weight:600}
+
+/* ---------- 背诵模式 ---------- */
+body.recite-mode{--fs:17px}
+body.recite-mode .hero,body.recite-mode .blksub,body.recite-mode .blkhead,body.recite-mode footer{display:none}
+body.recite-mode #nav-quick{display:none!important}
+body.recite-mode .seg.det,body.recite-mode .seg.probe,body.recite-mode .seg.red{display:none}
+body.recite-mode .hide,body.recite-mode .norec{display:none!important}
+body.recite-mode main{padding-bottom:110px}
+body.recite-mode details.card{background:transparent;border:none;border-bottom:1px dashed var(--line);border-radius:0;margin:0;padding:3vh 0 4vh}
+body.recite-mode details.card:hover{background:transparent}
+body.recite-mode summary{padding:0 0 12px;cursor:default;pointer-events:none}
+body.recite-mode summary:hover{background:transparent}
+body.recite-mode .chev{display:none}
+body.recite-mode .qid{font-size:.84em;color:var(--dim)}
+body.recite-mode .qt{font-size:1.16em}
+body.recite-mode .cbody{border-top:none;padding:0}
+body.recite-mode .seg.ask{margin-top:0}
+body.recite-mode .seg.ask p{font-size:.92em;color:var(--dim)}
+body.recite-mode .seg.say blockquote{font-size:.92em;background:transparent;border-left:2px solid var(--line);color:var(--dim);padding:6px 14px}
+body.recite-mode .seg.recite{margin-top:16px}
+body.recite-mode .recite-body{padding:20px 22px;font-size:1.04em;line-height:2}
+.rbar{display:none;position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--headbg);backdrop-filter:blur(8px);border-top:1px solid var(--line);padding:9px 16px;font-size:.8em;color:var(--dim);justify-content:center;align-items:center;gap:18px}
+body.recite-mode .rbar{display:flex!important}
+.rbar #rnum{font-family:ui-monospace,Consolas,monospace;color:var(--fg)}
+.rbar .rhint{color:var(--dim2)}
+.rbar .rbtn{background:var(--bg3);border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:6px 16px;font-size:.95em;font-family:inherit;cursor:pointer;transition:.12s}
+.rbar .rbtn:hover{border-color:var(--dim2)}
+.rbar .rbtn:disabled{opacity:.35;cursor:default}
 
 /* 正文内元素 */
 .tw{overflow-x:auto;margin:10px 0;-webkit-overflow-scrolling:touch}
@@ -102,15 +167,15 @@ details[open] .chev{transform:rotate(90deg)}
 .tw table{margin:0}
 .cbody th,.cbody td{border:1px solid var(--line);padding:7px 10px;text-align:left;vertical-align:top;word-break:break-word}
 .cbody th{background:var(--bg3);color:var(--dim);font-weight:600;font-size:.95em}
-.cbody td{color:#c9d1d9}
+.cbody td{color:var(--fg2)}
 .cbody,.cbody p,.cbody li,.cbody blockquote,.cbody td,.cbody th{overflow-wrap:anywhere}
 .cbody ul,.cbody ol{margin:8px 0;padding-left:20px}
 .cbody li{margin-bottom:5px}
-.cbody strong,b{color:#fff;font-weight:600}
-.cbody blockquote{margin:10px 0;padding:9px 14px;border-left:2px solid var(--line);color:var(--dim);background:rgba(255,255,255,.02)}
+.cbody strong,b{color:var(--strong);font-weight:600}
+.cbody blockquote{margin:10px 0;padding:9px 14px;border-left:2px solid var(--line);color:var(--dim);background:var(--hover2)}
 .src{display:block;color:var(--dim2);font-size:.86em;margin-top:2px}
-.warn{margin-top:12px;padding:11px 14px;border-radius:8px;background:rgba(188,140,255,.08);border:1px solid rgba(188,140,255,.25);font-size:.88em;color:#d2a8ff}
-.tip{padding:10px 14px;border-radius:8px;background:rgba(63,185,80,.07);border-left:2px solid var(--green);font-size:.9em;color:#9fd8a8}
+.warn{margin-top:12px;padding:11px 14px;border-radius:8px;background:rgba(188,140,255,.08);border:1px solid rgba(188,140,255,.25);font-size:.88em;color:var(--purple2)}
+.tip{padding:10px 14px;border-radius:8px;background:rgba(63,185,80,.07);border-left:2px solid var(--green);font-size:.9em;color:var(--green2)}
 .note{margin-top:16px;padding:13px 16px;border-radius:9px;background:var(--bg3);border:1px solid var(--line);font-size:.9em}
 .note b{color:var(--orange)}
 .lead{color:var(--dim);font-size:.9em;margin:0 0 14px}
@@ -136,13 +201,13 @@ details.sub summary .hint{color:var(--dim2);font-size:.84em;margin-left:auto;fon
 .opts button:hover{color:var(--fg);border-color:var(--dim2)}
 .opts button.on{background:rgba(88,166,255,.15);border-color:var(--blue);color:var(--blue)}
 .verdict{margin:12px 0 0;padding:13px 16px;border-radius:9px;background:var(--bg3);border:1px solid var(--line);font-size:.9em;color:var(--dim)}
-.verdict.ok{border-color:rgba(63,185,80,.45);background:rgba(63,185,80,.09);color:#7ee08a}
-.verdict.mid{border-color:rgba(210,153,34,.45);background:rgba(210,153,34,.09);color:#e3b341}
-.verdict.no{border-color:rgba(248,81,73,.45);background:rgba(248,81,73,.09);color:#ff7b72}
-.verdict b{color:inherit}
+.verdict.ok{border-color:rgba(63,185,80,.45);background:rgba(63,185,80,.09);color:var(--okfg)}
+.verdict.mid{border-color:rgba(210,153,34,.45);background:rgba(210,153,34,.09);color:var(--amber2)}
+.verdict.no{border-color:rgba(248,81,73,.45);background:rgba(248,81,73,.09);color:var(--red2)}
 
 footer{border-top:1px solid var(--line2);padding:20px 0 40px;color:var(--dim2);font-size:.8em;text-align:center}
-.empty{display:none;padding:30px 0;color:var(--dim);text-align:center;font-size:.9em}
+.empty{display:none;padding:26px 0;color:var(--dim);text-align:center;font-size:.9em}
+.empty a{color:var(--blue);cursor:pointer;text-decoration:underline}
 
 @media (max-width:640px){
   .wrap{padding:0 14px}
@@ -151,64 +216,134 @@ footer{border-top:1px solid var(--line2);padding:20px 0 40px;color:var(--dim2);f
   .tools{margin-left:0;width:100%}
   input#q{flex:1;width:auto;min-width:0}
   .btn{padding:7px 9px}
+  .mode-btn{padding:7px 12px;font-size:.84em}
   summary{padding:12px 13px;gap:9px}
-  .qid{min-width:38px}
+  .qid{min-width:40px}
   .cbody{padding:2px 13px 16px}
   .dim{gap:8px}
   .dname{min-width:100%}
-  .hero h1{font-size:1.3em}
+  .hero h1{font-size:1.28em}
+  section.blk{scroll-margin-top:170px}
 
-  /* 窄屏：表格改成卡片式堆叠，避免挤成竖排单字 */
   .tw{overflow:visible}
   .cbody table,.cbody tbody,.cbody tr,.cbody td,.cbody th{display:block;width:auto}
   .cbody tr:has(th){display:none}
-  .cbody tr{border:1px solid var(--line);border-radius:9px;padding:6px 10px;margin-bottom:9px;background:rgba(255,255,255,.015)}
+  .cbody tr{border:1px solid var(--line);border-radius:9px;padding:6px 10px;margin-bottom:9px;background:var(--hover3)}
   .cbody td{border:none;padding:4px 0;font-size:.9em}
   .cbody td[data-l]::before{content:attr(data-l);display:block;font-size:.76em;color:var(--dim2);margin-bottom:1px}
   .cbody td:empty{display:none}
+
+  body.recite-mode input#q,body.recite-mode #expand,body.recite-mode #collapse{display:none}
+  body.recite-mode .tools{width:auto;margin-left:auto}
+  body.recite-mode .seg.say{display:none}
+  .rbar{gap:14px}
+  .rbar .rhint{display:none}
+  .rbar .rbtn{padding:8px 22px}
 }
 """
 
 JS = r"""
 (function(){
-  var cards = [].slice.call(document.querySelectorAll('details.card'));
   var q = document.getElementById('q');
   var empty = document.getElementById('empty');
+  var emptyTxt = document.getElementById('empty-txt');
+  var cur = 'quick';
+  var reciteMode = false, rIdx = 0, rCards = [];
 
-  // 搜索
-  q.addEventListener('input', function(){
+  function cardsOf(mode){
+    return [].slice.call(document.querySelectorAll('#mode-' + mode + ' details.card'));
+  }
+
+  function doSearch(){
     var kw = q.value.trim().toLowerCase();
-    var shown = 0;
-    cards.forEach(function(c){
+    var shown = 0, other = 0, otherMode = cur === 'quick' ? 'handbook' : 'quick';
+    cardsOf(cur).forEach(function(c){
       var hit = !kw || (c.dataset.search || '').indexOf(kw) > -1;
       c.classList.toggle('hide', !hit);
       if (hit) shown++;
+      if (kw && hit && !reciteMode) c.open = false;
     });
-    empty.style.display = shown ? 'none' : 'block';
-    if (kw) cards.forEach(function(c){ if(!c.classList.contains('hide')) c.open = true; });
-  });
-  q.addEventListener('keydown', function(e){ if(e.key==='Escape'){ q.value=''; q.dispatchEvent(new Event('input')); }});
+    if (kw) {
+      cardsOf(otherMode).forEach(function(c){
+        if ((c.dataset.search || '').indexOf(kw) > -1) other++;
+      });
+    }
+    document.querySelectorAll('#mode-' + cur + ' section.blk').forEach(function(s){
+      var any = s.querySelectorAll('details.card:not(.hide)').length;
+      s.style.display = any ? '' : 'none';
+    });
+    if (!shown) {
+      empty.style.display = 'block';
+      emptyTxt.innerHTML = other
+        ? '这一段没有，但另一个模块有 <b>' + other + '</b> 条 —— <a data-jump="' + otherMode + '">切过去看</a>'
+        : '没找到。换个词试试，比如「评测」「追问」「数据」。';
+    } else {
+      empty.style.display = 'none';
+    }
+    if (reciteMode) rebuildRCards();
+  }
 
-  // 全展开 / 全收
+  function setMode(m, keepScroll){
+    if (m !== 'quick' && reciteMode) setRecite(false);
+    cur = m;
+    document.querySelectorAll('.mode-btn').forEach(function(b){
+      b.classList.toggle('on', b.dataset.mode === m);
+    });
+    ['quick','handbook'].forEach(function(x){
+      document.getElementById('mode-' + x).style.display = (x === m) ? 'block' : 'none';
+      var nav = document.getElementById('nav-' + x);
+      if (nav) nav.style.display = (x === m) ? 'flex' : 'none';
+    });
+    if (history.replaceState) history.replaceState(null, '', '#' + m);
+    if (!keepScroll) window.scrollTo({top:0});
+    doSearch();
+  }
+
+  document.querySelectorAll('.mode-btn').forEach(function(b){
+    b.addEventListener('click', function(){ setMode(b.dataset.mode); });
+  });
+
+  q.addEventListener('input', doSearch);
+  q.addEventListener('keydown', function(e){ if(e.key==='Escape'){ q.value=''; doSearch(); }});
+
   document.getElementById('expand').addEventListener('click', function(){
-    cards.forEach(function(c){ if(!c.classList.contains('hide')) c.open = true; });
+    cardsOf(cur).forEach(function(c){ if(!c.classList.contains('hide')) c.open = true; });
   });
   document.getElementById('collapse').addEventListener('click', function(){
-    cards.forEach(function(c){ c.open = false; });
+    cardsOf(cur).forEach(function(c){ c.open = false; });
     document.querySelectorAll('details.sub').forEach(function(s){ s.open = false; });
     window.scrollTo({top:0, behavior:'smooth'});
   });
 
-  // 字号三档
-  var sizes = ['', 'big', 'small'];
-  var si = 0;
+  var sizes = ['', 'big', 'small'], si = 0;
   document.getElementById('font').addEventListener('click', function(){
     si = (si + 1) % 3;
     document.body.classList.remove('big','small');
     if (sizes[si]) document.body.classList.add(sizes[si]);
   });
 
-  // 打分器
+  /* 深色 / 浅色 */
+  var themeBtn = document.getElementById('theme');
+  function applyTheme(t){
+    document.body.classList.toggle('light', t === 'light');
+    document.documentElement.style.colorScheme = (t === 'light' ? 'light' : 'dark');
+    themeBtn.textContent = (t === 'light') ? '深色' : '浅色';
+    themeBtn.title = (t === 'light') ? '切到深色' : '切到浅色';
+    try { localStorage.setItem('theme', t); } catch(e){}
+  }
+  themeBtn.addEventListener('click', function(){
+    applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
+  });
+  var saved = null;
+  try { saved = localStorage.getItem('theme'); } catch(e){}
+  applyTheme(saved === 'light' ? 'light' : 'dark');
+
+  document.addEventListener('click', function(e){
+    var j = (e.target.closest ? e.target.closest('[data-jump]') : null);
+    if (j) { e.preventDefault(); setMode(j.dataset.jump); }
+  });
+
+  /* 打分器 */
   document.querySelectorAll('[data-scorer]').forEach(function(sc){
     var verdict = document.querySelector('[data-verdict]');
     var btns = [].slice.call(sc.querySelectorAll('button'));
@@ -250,6 +385,93 @@ JS = r"""
       });
     });
   });
+
+  /* ---------- 背诵模式 ---------- */
+  var rBtn = document.getElementById('recite');
+  var rNum = document.getElementById('rnum');
+  var rPrev = document.getElementById('rprev');
+  var rNext = document.getElementById('rnext');
+
+  function paintNum(){
+    var n = rCards.length;
+    rNum.textContent = n ? (rIdx + 1) + ' / ' + n : '0 / 0';
+    rPrev.disabled = (rIdx <= 0);
+    rNext.disabled = (rIdx >= n - 1);
+  }
+
+  function rebuildRCards(){
+    rCards = [].slice.call(document.querySelectorAll('#mode-quick details.card'))
+      .filter(function(c){
+        return c.querySelector('.recite-body') && !c.classList.contains('hide');
+      });
+    if (rIdx >= rCards.length) rIdx = Math.max(0, rCards.length - 1);
+    paintNum();
+  }
+
+  function gotoCard(i){
+    if (!rCards.length) return;
+    rIdx = Math.max(0, Math.min(rCards.length - 1, i));
+    var c = rCards[rIdx];
+    var hh = document.querySelector('header').offsetHeight + 8;
+    var y = c.getBoundingClientRect().top + window.pageYOffset - hh;
+    window.scrollTo({top: Math.max(0, y), behavior: 'auto'});
+    paintNum();
+  }
+
+  function setRecite(on){
+    reciteMode = on;
+    document.body.classList.toggle('recite-mode', on);
+    rBtn.classList.toggle('on', on);
+    rBtn.textContent = on ? '退出背诵' : '背诵模式';
+    rBtn.title = on ? '回到完整内容' : '只显示背诵稿，上下键翻卡';
+    if (on) {
+      if (cur !== 'quick') setMode('quick', true);
+      cardsOf('quick').forEach(function(c){
+        c.classList.toggle('norec', !c.querySelector('.recite-body'));
+        c.open = true;
+      });
+      rIdx = 0;
+      rebuildRCards();
+      window.scrollTo({top: 0, behavior: 'auto'});
+      setTimeout(function(){ gotoCard(0); }, 20);
+    } else {
+      rCards = [];
+      paintNum();
+    }
+  }
+
+  rBtn.addEventListener('click', function(){ setRecite(!reciteMode); });
+  rPrev.addEventListener('click', function(){ gotoCard(rIdx - 1); });
+  rNext.addEventListener('click', function(){ gotoCard(rIdx + 1); });
+
+  document.addEventListener('keydown', function(e){
+    if (!reciteMode) return;
+    if (e.target && e.target.tagName === 'INPUT') return;
+    if (e.key === 'Escape') { setRecite(false); return; }
+    if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
+      e.preventDefault(); gotoCard(rIdx + 1);
+    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault(); gotoCard(rIdx - 1);
+    }
+  });
+
+  var rTick = false;
+  window.addEventListener('scroll', function(){
+    if (!reciteMode || rTick || !rCards.length) return;
+    rTick = true;
+    requestAnimationFrame(function(){
+      rTick = false;
+      var hh = document.querySelector('header').offsetHeight + 8;
+      var best = 0, bd = 1e9;
+      rCards.forEach(function(c, i){
+        var d = Math.abs(c.getBoundingClientRect().top - hh);
+        if (d < bd) { bd = d; best = i; }
+      });
+      if (best !== rIdx) { rIdx = best; paintNum(); }
+    });
+  }, {passive: true});
+
+  setMode((location.hash.replace('#','') === 'handbook') ? 'handbook' : 'quick', true);
 })();
 """
 
@@ -261,15 +483,13 @@ def strip(h):
 
 
 def wrap_tables(h):
-    """给表格套滚动容器，并给每个 td 打上列名（窄屏下转卡片式堆叠用）"""
+    """给表格套滚动容器，并给每个 td 打上列名（窄屏转卡片式堆叠用）"""
     def repl(m):
         tbl = m.group(0)
         ths = re.findall(r"<th>(.*?)</th>", tbl, re.S)
-        if not ths:
-            return '<div class="tw">' + tbl + "</div>"
-        labels = [strip(t) for t in ths]
+        labels = [strip(t) for t in ths] if ths else []
         head_end = tbl.find("</tr>")
-        if head_end < 0:
+        if not labels or head_end < 0:
             return '<div class="tw">' + tbl + "</div>"
         head, rest = tbl[:head_end + 5], tbl[head_end + 5:]
         counter = [0]
@@ -279,13 +499,32 @@ def wrap_tables(h):
             counter[0] += 1
             return '<td data-l="%s">' % H.escape(lab)
 
-        rest = re.sub(r"<td>", td_repl, rest)
-        return '<div class="tw">' + head + rest + "</div>"
+        return '<div class="tw">' + head + re.sub(r"<td>", td_repl, rest) + "</div>"
 
     return re.sub(r"<table>.*?</table>", repl, h, flags=re.S)
 
 
-def render_card(c):
+def md(s):
+    """纯文本 → HTML（转义 + **加粗**）"""
+    s = H.escape(s)
+    return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
+
+
+def recite_html(s):
+    """背诵稿：按空行分段，自动算字数与口播时长（中文约 4.2 字/秒）"""
+    paras = [p.strip() for p in s.strip().split("\n\n") if p.strip()]
+    plain = strip(s)
+    n = len(re.sub(r"\s+", "", plain))
+    sec = int(round(n / 4.2))
+    body = "".join("<p>%s</p>" % md(p) for p in paras)
+    meta = ('<div class="recite-meta">全文 <b>%d</b> 字 · 正常语速念一遍约 <b>%d</b> 秒</div>' % (n, sec))
+    return ('<div class="seg recite"><span class="lab">背诵版 · 照着念</span>'
+            '<div class="recite-body">%s</div>%s</div>') % (body, meta)
+
+
+# ---------- 速查模块的卡 ----------
+def render_quick_card(c):
+    rc = RECITE.get(c["id"]) or c.get("recite")
     kids = []
     if c.get("todo"):
         kids.append('<span class="tag todo">待你填</span>')
@@ -293,11 +532,10 @@ def render_card(c):
         cls = {"必背": "must", "必做": "must", "核心": "core"}.get(c["tag"], "core")
         kids.append('<span class="tag %s">%s</span>' % (cls, H.escape(c["tag"])))
 
-    search = strip(c.get("title", "")) + " " + strip(c.get("ask", "")) + " " + \
-             strip(c.get("say", "")) + " " + strip(c.get("detail", "")) + " " + \
-             strip(c.get("body", ""))
-    for p in c.get("probe", []):
-        search += " " + strip(p)
+    search = " ".join(strip(x or "") for x in (
+        c.get("title"), c.get("ask"), c.get("say"), rc,
+        c.get("detail"), c.get("body")))
+    search += " " + " ".join(strip(p) for p in c.get("probe", []))
 
     head = ('<summary><span class="qid">%s</span><span class="qt">%s</span>%s'
             '<span class="chev">›</span></summary>') % (
@@ -307,6 +545,8 @@ def render_card(c):
         body = '<div class="cbody">'
         if c.get("ask"):
             body += '<div class="seg ask"><span class="lab">他在测什么</span><p>%s</p></div>' % c["ask"]
+        if rc:
+            body += recite_html(rc)
         body += wrap_tables(c.get("body", "")) + "</div>"
     else:
         body = '<div class="cbody">'
@@ -314,6 +554,8 @@ def render_card(c):
             body += '<div class="seg ask"><span class="lab">面试官原话</span><p>%s</p></div>' % c["ask"]
         if c.get("say"):
             body += '<div class="seg say"><span class="lab">20 秒答法</span><blockquote>%s</blockquote></div>' % c["say"]
+        if rc:
+            body += recite_html(rc)
         if c.get("detail"):
             body += '<div class="seg det"><span class="lab">展开讲</span>%s</div>' % wrap_tables(c["detail"])
         if c.get("probe"):
@@ -325,26 +567,92 @@ def render_card(c):
             % (H.escape(search.lower()), H.escape(c["id"].replace(".", "-")), head, body))
 
 
-def render_block(b):
-    tabs = ('<a class="tab" href="#b%s">%s · %s</a>'
-            % (b["key"], b["key"], H.escape(b["title"])))
-    inner = "".join(render_card(c) for c in b["cards"])
-    sec = ('<section class="blk" id="b%s">'
-           '<div class="blkhead"><span class="blkno">板块 %s</span><h2>%s</h2></div>'
+# ---------- 手册模块的卡 ----------
+def blocks_html(items):
+    out = []
+    for kind, val in items:
+        if kind == "table":
+            out.append(wrap_tables(val))
+        else:
+            out.append("<p>%s</p>" % md(val))
+    return "".join(out)
+
+
+def render_hb_card(c, idx, key=""):
+    qid = c["id"] or "%02d" % idx
+    search = c["title"] + " " + c.get("ask", "")
+    for k in ("say", "detail", "probe", "red"):
+        for kind, val in c.get(k, []):
+            search += " " + strip(val)
+    search = re.sub(r"\s+", " ", search)
+
+    head = ('<summary><span class="qid">%s</span><span class="qt">%s</span>'
+            '<span class="chev">›</span></summary>') % (H.escape(qid), H.escape(c["title"]))
+
+    body = '<div class="cbody">'
+    if c.get("ask"):
+        body += '<div class="seg ask"><span class="lab">他在测什么</span><p>%s</p></div>' % md(c["ask"])
+
+    if c.get("say"):
+        seg = '<div class="seg say"><span class="lab">照着说</span>'
+        for kind, val in c["say"]:
+            if kind == "table":
+                seg += wrap_tables(val)
+            else:
+                seg += "<blockquote>%s</blockquote>" % md(val)
+        body += seg + "</div>"
+
+    if c.get("detail"):
+        lab = "正文" if c.get("kind") == "ref" else "这是什么"
+        body += '<div class="seg det"><span class="lab">%s</span>%s</div>' % (lab, blocks_html(c["detail"]))
+
+    if c.get("probe"):
+        lis = "".join("<li>%s</li>" % md(v) for k, v in c["probe"])
+        body += '<div class="seg probe"><span class="lab">他要追的话</span><ul>%s</ul></div>' % lis
+
+    if c.get("red"):
+        lis = "".join("<li>%s</li>" % md(v) for k, v in c["red"])
+        body += '<div class="seg red"><span class="lab">红线</span><ul>%s</ul></div>' % lis
+
+    body += "</div>"
+    anchor = H.escape(re.sub(r"[^\w]", "-", (key + "-" if key else "") + qid))
+    return ('<details class="card" data-search="%s" id="%s">%s%s</details>'
+            % (H.escape(search.lower()), anchor, head, body))
+
+
+def render_block(b, mode):
+    if mode == "quick":
+        cards = "".join(render_quick_card(c) for c in b["cards"])
+    else:
+        cards = "".join(render_hb_card(c, i + 1, b["key"]) for i, c in enumerate(b["cards"]))
+    label = b["title"].split("：")[0] if mode == "handbook" else "板块 " + b["key"]
+    tab = '<a class="tab" href="#%s-%s">%s</a>' % (mode, b["key"], H.escape(label))
+    sec = ('<section class="blk" id="%s-%s">'
+           '<div class="blkhead"><h2>%s</h2></div>'
            '<p class="blksub">%s <span style="color:var(--dim2)">· %d 张</span></p>'
-           '%s</section>') % (b["key"], b["key"], H.escape(b["title"]),
-                              b["sub"], len(b["cards"]), inner)
-    return tabs, sec
+           '%s</section>') % (mode, b["key"], H.escape(b["title"]), b["sub"],
+                              len(b["cards"]), cards)
+    return tab, sec
 
 
 def main():
-    tabs, secs = [], []
-    total = 0
-    for b in BLOCKS:
-        t, s = render_block(b)
-        tabs.append(t)
-        secs.append(s)
-        total += len(b["cards"])
+    quick_blocks = [part0.BLOCK, part1.BLOCK, part2.BLOCK]
+    hb_blocks = HB.BLOCKS
+
+    q_tabs, q_secs = [], []
+    for b in quick_blocks:
+        t, s = render_block(b, "quick")
+        q_tabs.append(t)
+        q_secs.append(s)
+
+    h_tabs, h_secs = [], []
+    for b in hb_blocks:
+        t, s = render_block(b, "handbook")
+        h_tabs.append(t)
+        h_secs.append(s)
+
+    n_quick = sum(len(b["cards"]) for b in quick_blocks)
+    n_hb = sum(len(b["cards"]) for b in hb_blocks)
 
     doc = """<!DOCTYPE html>
 <html lang="zh-CN">
@@ -352,49 +660,69 @@ def main():
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow">
-<title>%s</title>
-<style>%s</style>
+<title>%(title)s</title>
+<style>%(css)s</style>
 </head>
 <body>
+<script>try{if(localStorage.getItem('theme')==='light'){document.body.className+=' light';document.documentElement.style.colorScheme='light';}}catch(e){}</script>
 <header>
   <div class="wrap">
     <div class="htop">
-      <div class="brand">%s<em>%s</em></div>
+      <div class="brand">%(title)s<em>%(sub)s</em></div>
       <div class="tools">
         <input id="q" type="search" placeholder="搜关键词：九问 / 幂等 / 时间粒度" autocomplete="off">
         <button class="btn" id="expand">全展开</button>
         <button class="btn" id="collapse">全收起</button>
         <button class="btn" id="font">字号</button>
+        <button class="btn" id="theme" title="切到浅色">浅色</button>
+        <button class="btn recite-btn" id="recite" title="只显示背诵稿，上下键翻卡">背诵模式</button>
       </div>
     </div>
-    <nav class="tabs">%s<a class="tab" href="#top">回到顶部</a></nav>
+    <div class="modes">
+      <button class="mode-btn on" data-mode="quick"><b>速查</b><span>%(nq)d 张 · 现场用</span></button>
+      <button class="mode-btn" data-mode="handbook"><b>手册</b><span>%(nt)d 题 · 备查用</span></button>
+    </div>
+    <nav class="tabs" id="nav-quick">%(qtabs)s<a class="tab" href="#top">回到顶部</a></nav>
+    <nav class="tabs" id="nav-handbook" style="display:none">%(htabs)s<a class="tab" href="#top">回到顶部</a></nav>
   </div>
 </header>
 <main class="wrap" id="top">
-  <div class="hero">
-    <h1>%s</h1>
-    <p>%s</p>
-    <div class="note">用法：先看板块 0（考前十分钟），再用板块 1 应付现场给场景。
-    每张卡都是「面试官原话 → 20 秒答法 → 展开讲 → 他可能追什么」。
-    标 <b style="color:var(--purple)">待你填</b> 的三张需要你自己补事实。</div>
+  <div id="mode-quick">
+    <div class="hero">
+      <h1>速查：现场答卷用的 %(nq)d 张卡</h1>
+      <p>面试官扔场景时照这个走：先问 → 判断值不值得做 → 12 步。</p>
+      <div class="note">三个板块：考前速扫 / 场景题 12 步 / 项目全链路。
+      标 <b style="color:var(--purple)">待你填</b> 的几张需要你自己补事实。</div>
+    </div>
+    %(qsecs)s
   </div>
-  %s
-  <div class="empty" id="empty">没找到。换个词试试，比如「评测」「追问」「数据」。</div>
+  <div id="mode-handbook" style="display:none">
+    <div class="hero">
+      <h1>手册：%(nt)d 题完整版</h1>
+      <p>逐题四段：他在测什么 → 照着说 → 这是什么 → 他要追的话 / 红线。</p>
+      <div class="note">内容逐字来自手册原稿，未改写。姓名、学校、届别已留空为【】。</div>
+    </div>
+    %(hsecs)s
+  </div>
+  <div class="empty" id="empty"><span id="empty-txt"></span></div>
 </main>
-<footer>个人技术笔记 · 共 %d 张卡 · 内容以本人实际经历为准</footer>
-<script>%s</script>
+<footer>个人技术笔记 · 速查 %(nq)d 张 ＋ 手册 %(nt)d 题（另含前置 %(pre)d 张、附录 %(apx)d 张）</footer>
+<div class="rbar" id="rbar"><button class="rbtn" id="rprev">上一张</button><span id="rnum">1 / 1</span><button class="rbtn" id="rnext">下一张</button><span class="rhint">↑ ↓ 翻卡 · Esc 退出</span></div>
+<script>%(js)s</script>
 </body>
-</html>""" % (TITLE, CSS, TITLE, SUBTITLE, "".join(tabs), TITLE, SUBTITLE,
-             "".join(secs), total, JS)
+</html>""" % dict(title=TITLE, sub=SUBTITLE, css=CSS, js=JS, nq=n_quick, nh=n_hb,
+                 qtabs="".join(q_tabs), htabs="".join(h_tabs), nt=HB.TOTAL,
+                 qsecs="".join(q_secs), hsecs="".join(h_secs),
+                 pre=len(hb_blocks[0]["cards"]), apx=len(hb_blocks[-1]["cards"]))
 
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(doc)
-    # 关掉 Jekyll，避免多走一遍处理
     open(os.path.join(BASE, ".nojekyll"), "w").close()
 
     print("written:", OUT)
-    print("blocks:", len(BLOCKS), "cards:", total,
-          "size:", len(doc.encode("utf-8")), "bytes")
+    print("quick blocks:", len(quick_blocks), "cards:", n_quick)
+    print("handbook blocks:", len(hb_blocks), "cards:", n_hb)
+    print("size:", len(doc.encode("utf-8")), "bytes")
 
 
 if __name__ == "__main__":
