@@ -449,7 +449,7 @@ JS = r"""
 
   function syncUnit(card, v){
     for (var i = 0; i < rUnits.length; i++) {
-      if (rUnits[i].card === card && rUnits[i].v === v) { rIdx = i; paintNum(); return; }
+      if (rUnits[i].card === card && rUnits[i].v === v) { gotoUnit(i); return; }
     }
   }
 
