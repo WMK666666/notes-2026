@@ -14,6 +14,10 @@ import handbook_data as HB
 
 RECITE = recite_data.RECITE
 
+# 备查卡：内容是清单 / 工具表 / 自检项，对着查有用，但没法当回答念。
+# 渲染成橙色「备查 · 别照着念」，且不进背诵模式。
+REF_ONLY = {"Q0.7", "Q0.9", "Q2.11", "Q2.12"}
+
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(BASE, "index.html")
 
@@ -137,6 +141,12 @@ details[open] .chev{transform:rotate(90deg)}
 .vtab.on{background:rgba(63,185,80,.14);border-color:var(--green);color:var(--green);font-weight:700}
 .recite-meta{margin-top:7px;font-size:.76em;color:var(--dim2);letter-spacing:.02em}
 .recite-meta b{color:var(--green);font-weight:600}
+
+/* 备查版（清单，不背） */
+.seg.recite.ref .lab{color:var(--orange)}
+.vwrap.ref{background:rgba(210,153,34,.06);border-color:rgba(210,153,34,.32)}
+.vwrap.ref .recite-meta b{color:var(--amber2)}
+.reftip{margin-top:8px;font-size:.8em;color:var(--amber2);line-height:1.6}
 
 /* ---------- 背诵模式 ---------- */
 body.recite-mode{--fs:17px}
@@ -439,7 +449,7 @@ JS = r"""
   function rebuildRUnits(){
     rUnits = [];
     [].slice.call(document.querySelectorAll('#mode-quick details.card')).forEach(function(c){
-      if (c.classList.contains('hide')) return;
+      if (c.classList.contains('hide') || c.classList.contains('refonly')) return;
       var n = c.querySelectorAll('.vwrap').length;
       for (var i = 0; i < n; i++) rUnits.push({card: c, v: i});
     });
@@ -473,7 +483,7 @@ JS = r"""
     if (on) {
       if (cur !== 'quick') setMode('quick', true);
       cardsOf('quick').forEach(function(c){
-        c.classList.toggle('norec', !c.querySelector('.vwrap'));
+        c.classList.toggle('norec', !c.querySelector('.vwrap') || c.classList.contains('refonly'));
         c.open = true;
       });
       rIdx = 0;
@@ -565,8 +575,9 @@ def md(s):
     return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", s)
 
 
-def recite_html(versions):
-    """versions: [(版本名, 文本), ...]。单版不出标签，多版出「投研 / 跨境」切换。"""
+def recite_html(versions, ref=False):
+    """versions: [(版本名, 文本), ...]。单版不出标签，多版出「投研 / 跨境」切换。
+    ref=True 表示这是备查清单，渲染成橙色并写明别照着念。"""
     if not versions:
         return ""
     tabs = ""
@@ -582,10 +593,17 @@ def recite_html(versions):
         n = len(re.sub(r"\s+", "", plain))
         sec = int(round(n / 4.2))
         body = "".join("<p>%s</p>" % md(p) for p in paras)
-        meta = ('<div class="recite-meta">全文 <b>%d</b> 字 · 正常语速念一遍约 <b>%d</b> 秒</div>'
-                % (n, sec))
-        wraps.append('<div class="vwrap" data-v="%d"%s>%s%s</div>' % (
-            i, "" if i == 0 else " hidden", body, meta))
+        if ref:
+            meta = '<div class="recite-meta">全文 <b>%d</b> 字 · 这份是对着查的清单，不用背</div>' % n
+        else:
+            meta = ('<div class="recite-meta">全文 <b>%d</b> 字 · 正常语速念一遍约 <b>%d</b> 秒</div>'
+                    % (n, sec))
+        wraps.append('<div class="vwrap%s" data-v="%d"%s>%s%s</div>' % (
+            " ref" if ref else "", i, "" if i == 0 else " hidden", body, meta))
+    if ref:
+        return ('<div class="seg recite ref"><span class="lab">备查 · 别照着念</span>%s%s'
+                '<div class="reftip">这几条是清单，面试时用来对照自己漏没漏，念出来会像背书。</div></div>'
+                % (tabs, "".join(wraps)))
     return ('<div class="seg recite"><span class="lab">背诵版 · 照着念</span>%s%s</div>'
             % (tabs, "".join(wraps)))
 
@@ -604,6 +622,7 @@ def render_quick_card(c):
         kids.append('<span class="tag %s">%s</span>' % (cls, H.escape(c["tag"])))
 
     rc_text = " ".join(t for _n, t in rc)
+    is_ref = c["id"] in REF_ONLY
     search = " ".join(strip(x or "") for x in (
         c.get("title"), c.get("ask"), c.get("say"), rc_text,
         c.get("detail"), c.get("body")))
@@ -618,7 +637,7 @@ def render_quick_card(c):
         if c.get("ask"):
             body += '<div class="seg ask"><span class="lab">他在测什么</span><p>%s</p></div>' % c["ask"]
         if rc:
-            body += recite_html(rc)
+            body += recite_html(rc, is_ref)
         body += wrap_tables(c.get("body", "")) + "</div>"
     else:
         body = '<div class="cbody">'
@@ -627,7 +646,7 @@ def render_quick_card(c):
         if c.get("say"):
             body += '<div class="seg say"><span class="lab">20 秒答法</span><blockquote>%s</blockquote></div>' % c["say"]
         if rc:
-            body += recite_html(rc)
+            body += recite_html(rc, is_ref)
         if c.get("detail"):
             body += '<div class="seg det"><span class="lab">展开讲</span>%s</div>' % wrap_tables(c["detail"])
         if c.get("probe"):
@@ -635,8 +654,9 @@ def render_quick_card(c):
             body += '<div class="seg probe"><span class="lab">他可能追什么</span><ul>%s</ul></div>' % lis
         body += "</div>"
 
-    return ('<details class="card" data-search="%s" id="%s">%s%s</details>'
-            % (H.escape(search.lower()), H.escape(c["id"].replace(".", "-")), head, body))
+    return ('<details class="card%s" data-search="%s" id="%s">%s%s</details>'
+            % (" refonly" if is_ref else "", H.escape(search.lower()),
+               H.escape(c["id"].replace(".", "-")), head, body))
 
 
 # ---------- 手册模块的卡 ----------
@@ -766,7 +786,8 @@ def main():
       <div class="note">三个板块：考前速扫 / 场景题 12 步 / 项目全链路。
       标 <b style="color:var(--purple)">待你填</b> 的几张需要你自己补事实；
       带 <b style="color:var(--green)">绿框背诵版</b> 的 %(nr)d 张、共 %(nu)d 段（投研 / 跨境各一版，卡内可切换）可以直接照念；
-      点右上角「背诵模式」只留稿子、按段翻；其余是没有定稿的口播、只给现场思路。</div>
+      标 <b style="color:var(--orange)">橙框备查</b> 的 %(nref)d 张是清单和自检项，用来对着查、念出来反而像背书；
+      点右上角「背诵模式」只留稿子、按段翻（备查卡不进）；其余是没有定稿的口播、只给现场思路。</div>
     </div>
     %(qsecs)s
   </div>
@@ -788,7 +809,9 @@ def main():
                  qtabs="".join(q_tabs), htabs="".join(h_tabs), nt=HB.TOTAL,
                  qsecs="".join(q_secs), hsecs="".join(h_secs),
                  pre=len(hb_blocks[0]["cards"]), apx=len(hb_blocks[-1]["cards"]),
-                 nr=len(RECITE), nu=sum(len(v) for v in RECITE.values()))
+                 nr=len([k for k in RECITE if k not in REF_ONLY]),
+                 nu=sum(len(v) for k, v in RECITE.items() if k not in REF_ONLY),
+                 nref=len([k for k in RECITE if k in REF_ONLY]))
 
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(doc)
