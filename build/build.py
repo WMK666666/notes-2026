@@ -230,7 +230,7 @@ footer{border-top:1px solid var(--line2);padding:20px 0 40px;color:var(--dim2);f
   .htop{padding:10px 0 8px;gap:8px}
   .brand em{display:none}
   .tools{margin-left:0;width:100%}
-  input#q{flex:1;width:auto;min-width:0}
+  input#q{flex:1 0 100%;order:-1;width:100%;padding:9px 12px;font-size:.92em}
   .btn{padding:7px 9px}
   .mode-btn{padding:7px 12px;font-size:.84em}
   summary{padding:12px 13px;gap:9px}
@@ -712,12 +712,19 @@ def render_hb_card(c, idx, key=""):
             % (H.escape(search.lower()), anchor, head, body))
 
 
+# 速查三个板块的导航短名（板块标题太长，tab 上放不下）
+QUICK_TAB = {"0": "考前速扫", "1": "场景题 12 步", "2": "项目全链路"}
+
+
 def render_block(b, mode):
     if mode == "quick":
         cards = "".join(render_quick_card(c) for c in b["cards"])
     else:
         cards = "".join(render_hb_card(c, i + 1, b["key"]) for i, c in enumerate(b["cards"]))
-    label = b["title"].split("：")[0] if mode == "handbook" else "板块 " + b["key"]
+    if mode == "handbook":
+        label = b["title"].split("：")[0]
+    else:
+        label = QUICK_TAB.get(str(b["key"]), b["title"])
     tab = '<a class="tab" href="#%s-%s">%s</a>' % (mode, b["key"], H.escape(label))
     sec = ('<section class="blk" id="%s-%s">'
            '<div class="blkhead"><h2>%s</h2></div>'
