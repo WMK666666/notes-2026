@@ -76,9 +76,15 @@ input#q::placeholder{color:var(--dim2)}
 .mode-btn.on{background:rgba(88,166,255,.13);border-color:var(--blue);color:var(--blue)}
 .mode-btn.on span{color:rgba(88,166,255,.7)}
 
-.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tab{font-size:.8em;color:var(--dim);text-decoration:none;padding:5px 11px;border-radius:999px;border:1px solid var(--line2);white-space:nowrap}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:9px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.tabs::-webkit-scrollbar{height:6px}
+.tabs::-webkit-scrollbar-track{background:transparent}
+.tabs::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.tabs::-webkit-scrollbar-thumb:hover{background:var(--dim2)}
+.tabs.can-drag{cursor:grab}
+.tabs.dragging{cursor:grabbing;user-select:none}
+.tabs.dragging .tab{pointer-events:none}
+.tab{font-size:.8em;color:var(--dim);text-decoration:none;padding:5px 11px;border-radius:999px;border:1px solid var(--line2);white-space:nowrap;-webkit-user-drag:none}
 .tab:hover{color:var(--fg);border-color:var(--dim2)}
 
 /* ---------- 板块 ---------- */
@@ -88,7 +94,7 @@ main{padding:24px 0 80px}
 .hero p{margin:0;color:var(--dim);font-size:.88em}
 .hero .note{margin-top:12px;font-size:.84em;color:var(--dim);border-left:2px solid var(--line);padding-left:12px}
 
-section.blk{margin-bottom:36px;scroll-margin-top:150px}
+section.blk{margin-bottom:36px;scroll-margin-top:calc(var(--hh,185px) + 10px)}
 .blkhead{margin-bottom:4px}
 .blkhead h2{margin:0;font-size:1.14em}
 .blksub{color:var(--dim);font-size:.84em;margin:0 0 14px}
@@ -239,7 +245,7 @@ footer{border-top:1px solid var(--line2);padding:20px 0 40px;color:var(--dim2);f
   .dim{gap:8px}
   .dname{min-width:100%}
   .hero h1{font-size:1.28em}
-  section.blk{scroll-margin-top:170px}
+  section.blk{scroll-margin-top:calc(var(--hh,235px) + 10px)}
 
   .tw{overflow:visible}
   .cbody table,.cbody tbody,.cbody tr,.cbody td,.cbody th{display:block;width:auto}
@@ -266,9 +272,66 @@ JS = r"""
   var cur = 'quick';
   var reciteMode = false, rIdx = 0, rUnits = [];
 
+  /* ---------- 头部实测高度：锚点跳转要按它留位置 ---------- */
+  var hd = document.querySelector('header');
+  function syncHH(){
+    if (hd) document.documentElement.style.setProperty('--hh', hd.offsetHeight + 'px');
+  }
+  syncHH();
+  window.addEventListener('resize', syncHH);
+  window.addEventListener('load', syncHH);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncHH);
+
   function cardsOf(mode){
     return [].slice.call(document.querySelectorAll('#mode-' + mode + ' details.card'));
   }
+
+  /* ---------- 导航条：鼠标按住左右拖（触屏仍走原生滑动） ---------- */
+  var navMarkDrag = (function(){
+    var navs = [].slice.call(document.querySelectorAll('.tabs'));
+
+    function markDrag(){
+      navs.forEach(function(n){
+        n.classList.toggle('can-drag', n.scrollWidth > n.clientWidth + 1);
+      });
+    }
+    markDrag();
+    window.addEventListener('resize', markDrag);
+    setTimeout(markDrag, 300);
+
+    navs.forEach(function(nav){
+      var down = false, moved = false, sx = 0, sl = 0;
+
+      nav.addEventListener('pointerdown', function(e){
+        if (e.pointerType === 'touch' || e.button !== 0) return;
+        if (nav.scrollWidth <= nav.clientWidth + 1) return;
+        down = true; moved = false; sx = e.clientX; sl = nav.scrollLeft;
+        nav.classList.add('dragging');
+      });
+
+      window.addEventListener('pointermove', function(e){
+        if (!down) return;
+        var dx = e.clientX - sx;
+        if (!moved && Math.abs(dx) < 4) return;
+        moved = true;
+        nav.scrollLeft = sl - dx;
+      });
+
+      window.addEventListener('pointerup', function(){
+        if (!down) return;
+        down = false;
+        nav.classList.remove('dragging');
+      });
+
+      nav.addEventListener('click', function(e){
+        if (!moved) return;
+        e.preventDefault();
+        e.stopPropagation();
+        moved = false;
+      }, true);
+    });
+    return markDrag;
+  })();
 
   function doSearch(){
     var kw = q.value.trim().toLowerCase();
@@ -313,6 +376,8 @@ JS = r"""
     if (history.replaceState) history.replaceState(null, '', '#' + m);
     if (!keepScroll) window.scrollTo({top:0});
     doSearch();
+    navMarkDrag();
+    syncHH();
   }
 
   document.querySelectorAll('.mode-btn').forEach(function(b){
@@ -336,6 +401,7 @@ JS = r"""
     si = (si + 1) % 3;
     document.body.classList.remove('big','small');
     if (sizes[si]) document.body.classList.add(sizes[si]);
+    syncHH();
   });
 
   /* 深色 / 浅色 */
